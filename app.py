@@ -55,7 +55,11 @@ elif page == "Add Homework":
         assignment = st.text_area("Homework Description", value=hw["Description"])
         due_date = st.date_input("Due Date", value=pd.to_datetime(hw["Due Date"]))
         difficulty = st.slider("Difficulty Level", 1, 10, value=hw["Difficulty"])
-        priority = st.selectbox("Priority Level", ["Low", "Medium", "High"], index=["Low","Medium","High"].index(hw["Priority"]))
+        priority = st.selectbox(
+            "Priority Level",
+            ["Low", "Medium", "High"],
+            index=["Low", "Medium", "High"].index(hw["Priority"])
+        )
         study_hours = st.number_input("Estimated Study Hours", 1, 10, value=hw["Study Hours"])
     else:
         subject = st.text_input("Subject Name")
@@ -97,15 +101,20 @@ elif page == "Homework List":
     if st.session_state.homework_list:
         for i, hw in enumerate(st.session_state.homework_list):
             st.subheader(f"{hw['Subject']} - {hw['Description']}")
-            st.write(f"**Due Date:** {hw['Due Date']}, **Priority:** {hw['Priority']}, **Difficulty:** {hw['Difficulty']}, **Study Hours:** {hw['Study Hours']}")
-            
+            st.write(
+                f"**Due Date:** {hw['Due Date']}, "
+                f"**Priority:** {hw['Priority']}, "
+                f"**Difficulty:** {hw['Difficulty']}, "
+                f"**Study Hours:** {hw['Study Hours']}"
+            )
+
             col1, col2 = st.columns(2)
             with col1:
-                if st.button(f"Edit {i}"):
+                if st.button("Edit", key=f"edit-{i}"):
                     st.session_state.edit_index = i
                     st.experimental_rerun()
             with col2:
-                if st.button(f"Delete {i}"):
+                if st.button("Delete", key=f"delete-{i}"):
                     st.session_state.homework_list.pop(i)
                     st.success("✅ Homework deleted!")
                     st.experimental_rerun()
@@ -135,7 +144,6 @@ elif page == "Study Timer":
 # ------------------------
 elif page == "Survey":
     st.title("📊 Student Study Survey")
-
     st.write("Help us understand your study habits.")
 
     name = st.text_input("Your Name")
