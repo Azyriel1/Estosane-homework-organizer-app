@@ -14,6 +14,9 @@ if "homework_list" not in st.session_state:
 if "edit_index" not in st.session_state:
     st.session_state.edit_index = None  # Track which homework is being edited
 
+if "reload_page" not in st.session_state:
+    st.session_state.reload_page = False  # Flag to trigger rerun
+
 # ------------------------
 # Sidebar Navigation
 # ------------------------
@@ -108,16 +111,22 @@ elif page == "Homework List":
                 f"**Study Hours:** {hw['Study Hours']}"
             )
 
+            # Buttons with unique keys
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("Edit", key=f"edit-{i}"):
                     st.session_state.edit_index = i
-                    st.experimental_rerun()
+                    st.session_state.reload_page = True  # Flag to reload
             with col2:
                 if st.button("Delete", key=f"delete-{i}"):
                     st.session_state.homework_list.pop(i)
                     st.success("✅ Homework deleted!")
-                    st.experimental_rerun()
+                    st.session_state.reload_page = True  # Flag to reload
+
+        # Trigger rerun safely after loop finishes
+        if st.session_state.reload_page:
+            st.session_state.reload_page = False
+            st.experimental_rerun()
     else:
         st.info("No homework added yet. Go to 'Add Homework' to add new tasks.")
 
