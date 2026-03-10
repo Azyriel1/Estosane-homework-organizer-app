@@ -40,6 +40,7 @@ if page == "Home":
     - Organize school subjects
     - Study timer for productivity
     - Editable homework list
+    - Delete homework entries
     """)
 
     st.success("Tip: Use the sidebar to navigate through the app!")
@@ -65,7 +66,7 @@ elif page == "Add Homework":
             new_homework = {
                 "Subject": subject,
                 "Description": assignment,
-                "Due Date": due_date,
+                "Due Date": due_date.strftime("%Y-%m-%d"),
                 "Difficulty": difficulty,
                 "Priority": priority,
                 "Study Hours": study_hours
@@ -80,9 +81,21 @@ elif page == "Homework List":
     st.title("📋 Homework List")
 
     if st.session_state.homework_list:
-        df = pd.DataFrame(st.session_state.homework_list)
-        edited_df = st.experimental_data_editor(df, num_rows="dynamic")  # Editable table
-        st.write("You can edit homework directly in the table above!")
+        for i, hw in enumerate(st.session_state.homework_list):
+            st.subheader(f"{hw['Subject']} - {hw['Description']}")
+            st.write(f"**Due Date:** {hw['Due Date']}, **Priority:** {hw['Priority']}, **Difficulty:** {hw['Difficulty']}, **Study Hours:** {hw['Study Hours']}")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(f"Edit {i}"):
+                    # Prefill the Add Homework page with this entry for editing
+                    st.session_state.edit_index = i
+                    st.experimental_rerun()
+            with col2:
+                if st.button(f"Delete {i}"):
+                    st.session_state.homework_list.pop(i)
+                    st.success("Homework deleted!")
+                    st.experimental_rerun()
     else:
         st.info("No homework added yet. Go to 'Add Homework' to add new tasks.")
 
@@ -131,8 +144,10 @@ elif page == "About":
     The Student Homework Organizer is a simple application developed using Streamlit that helps students manage 
     their homework and academic responsibilities in an organized way. 
     
-    The app is designed for students who want an easy tool to track their assignments, deadlines, and study tasks.
+    The app is designed for students who want an easy tool to track their assignments, deadlines, and study tasks. 
+    
     Users can input information such as the subject name, homework description, due date, priority level, difficulty level, and estimated study hours. 
+    
     The application then displays helpful outputs including organized homework lists, study timer notifications, 
     tables, and status messages to guide students in managing their schoolwork efficiently.
     """)
