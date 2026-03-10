@@ -11,6 +11,9 @@ st.set_page_config(page_title="Student Homework Organizer", page_icon="📚")
 if "homework_list" not in st.session_state:
     st.session_state.homework_list = []
 
+if "edit_index" not in st.session_state:
+    st.session_state.edit_index = None  # Track which homework is being edited
+
 # ------------------------
 # Sidebar Navigation
 # ------------------------
@@ -27,22 +30,16 @@ st.sidebar.write("Manage your homework and stay organized.")
 # ------------------------
 if page == "Home":
     st.title("📚 Student Homework Organizer")
-
     st.header("Welcome!")
     st.write("This app helps students organize their homework and assignments.")
-
     st.image("https://cdn-icons-png.flaticon.com/512/3135/3135755.png", width=200)
-
     st.subheader("Features")
     st.write("""
-    - Add homework tasks
+    - Add, edit, and delete homework tasks
     - Track assignment deadlines
     - Organize school subjects
     - Study timer for productivity
-    - Editable homework list
-    - Delete homework entries
     """)
-
     st.success("Tip: Use the sidebar to navigate through the app!")
 
 # ------------------------
@@ -51,13 +48,22 @@ if page == "Home":
 elif page == "Add Homework":
     st.title("➕ Add Homework")
 
-    subject = st.text_input("Subject Name")
-    assignment = st.text_area("Homework Description")
-    due_date = st.date_input("Due Date", date.today())
-    difficulty = st.slider("Difficulty Level", 1, 10)
-    priority = st.selectbox("Priority Level", ["Low", "Medium", "High"])
-    reminder = st.checkbox("Set Study Reminder")
-    study_hours = st.number_input("Estimated Study Hours", 1, 10)
+    # Prefill fields if editing
+    if st.session_state.edit_index is not None:
+        hw = st.session_state.homework_list[st.session_state.edit_index]
+        subject = st.text_input("Subject Name", value=hw["Subject"])
+        assignment = st.text_area("Homework Description", value=hw["Description"])
+        due_date = st.date_input("Due Date", value=pd.to_datetime(hw["Due Date"]))
+        difficulty = st.slider("Difficulty Level", 1, 10, value=hw["Difficulty"])
+        priority = st.selectbox("Priority Level", ["Low", "Medium", "High"], index=["Low","Medium","High"].index(hw["Priority"]))
+        study_hours = st.number_input("Estimated Study Hours", 1, 10, value=hw["Study Hours"])
+    else:
+        subject = st.text_input("Subject Name")
+        assignment = st.text_area("Homework Description")
+        due_date = st.date_input("Due Date", date.today())
+        difficulty = st.slider("Difficulty Level", 1, 10)
+        priority = st.selectbox("Priority Level", ["Low", "Medium", "High"])
+        study_hours = st.number_input("Estimated Study Hours", 1, 10)
 
     if st.button("Save Homework"):
         if subject.strip() == "" or assignment.strip() == "":
@@ -71,8 +77,16 @@ elif page == "Add Homework":
                 "Priority": priority,
                 "Study Hours": study_hours
             }
-            st.session_state.homework_list.append(new_homework)
-            st.success("✅ Homework added successfully!")
+
+            if st.session_state.edit_index is not None:
+                # Update existing entry
+                st.session_state.homework_list[st.session_state.edit_index] = new_homework
+                st.session_state.edit_index = None
+                st.success("✅ Homework updated successfully!")
+            else:
+                # Add new entry
+                st.session_state.homework_list.append(new_homework)
+                st.success("✅ Homework added successfully!")
 
 # ------------------------
 # HOMEWORK LIST PAGE
@@ -88,13 +102,12 @@ elif page == "Homework List":
             col1, col2 = st.columns(2)
             with col1:
                 if st.button(f"Edit {i}"):
-                    # Prefill the Add Homework page with this entry for editing
                     st.session_state.edit_index = i
                     st.experimental_rerun()
             with col2:
                 if st.button(f"Delete {i}"):
                     st.session_state.homework_list.pop(i)
-                    st.success("Homework deleted!")
+                    st.success("✅ Homework deleted!")
                     st.experimental_rerun()
     else:
         st.info("No homework added yet. Go to 'Add Homework' to add new tasks.")
