@@ -14,15 +14,12 @@ if "homework_list" not in st.session_state:
 if "edit_index" not in st.session_state:
     st.session_state.edit_index = None  # Track which homework is being edited
 
-if "reload_page" not in st.session_state:
-    st.session_state.reload_page = False  # Flag to trigger rerun
-
 # ------------------------
 # Sidebar Navigation
 # ------------------------
 page = st.sidebar.selectbox(
     "Navigation",
-    ["Home", "Add Homework", "Homework List", "Study Timer", "Survey", "About"]
+    ["Home", "Add/Edit Homework", "Homework List", "Study Timer", "Survey", "About"]
 )
 
 st.sidebar.title("📚 Homework Organizer")
@@ -46,12 +43,11 @@ if page == "Home":
     st.success("Tip: Use the sidebar to navigate through the app!")
 
 # ------------------------
-# ADD HOMEWORK PAGE
+# ADD/EDIT HOMEWORK PAGE
 # ------------------------
-elif page == "Add Homework":
-    st.title("➕ Add Homework")
+elif page == "Add/Edit Homework":
+    st.title("➕ Add or Edit Homework")
 
-    # Prefill fields if editing
     if st.session_state.edit_index is not None:
         hw = st.session_state.homework_list[st.session_state.edit_index]
         subject = st.text_input("Subject Name", value=hw["Subject"])
@@ -59,9 +55,7 @@ elif page == "Add Homework":
         due_date = st.date_input("Due Date", value=pd.to_datetime(hw["Due Date"]))
         difficulty = st.slider("Difficulty Level", 1, 10, value=hw["Difficulty"])
         priority = st.selectbox(
-            "Priority Level",
-            ["Low", "Medium", "High"],
-            index=["Low", "Medium", "High"].index(hw["Priority"])
+            "Priority Level", ["Low", "Medium", "High"], index=["Low", "Medium", "High"].index(hw["Priority"])
         )
         study_hours = st.number_input("Estimated Study Hours", 1, 10, value=hw["Study Hours"])
     else:
@@ -86,12 +80,10 @@ elif page == "Add Homework":
             }
 
             if st.session_state.edit_index is not None:
-                # Update existing entry
                 st.session_state.homework_list[st.session_state.edit_index] = new_homework
                 st.session_state.edit_index = None
                 st.success("✅ Homework updated successfully!")
             else:
-                # Add new entry
                 st.session_state.homework_list.append(new_homework)
                 st.success("✅ Homework added successfully!")
 
@@ -102,40 +94,40 @@ elif page == "Homework List":
     st.title("📋 Homework List")
 
     if st.session_state.homework_list:
-        for i, hw in enumerate(st.session_state.homework_list):
-            st.subheader(f"{hw['Subject']} - {hw['Description']}")
-            st.write(
-                f"**Due Date:** {hw['Due Date']}, "
-                f"**Priority:** {hw['Priority']}, "
-                f"**Difficulty:** {hw['Difficulty']}, "
-                f"**Study Hours:** {hw['Study Hours']}"
-            )
+        df = pd.DataFrame(st.session_state.homework_list)
+        st.dataframe(df)
 
-            # Buttons with unique keys
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("Edit", key=f"edit-{i}"):
-                    st.session_state.edit_index = i
-                    st.session_state.reload_page = True  # Flag to reload
-            with col2:
-                if st.button("Delete", key=f"delete-{i}"):
-                    st.session_state.homework_list.pop(i)
-                    st.success("✅ Homework deleted!")
-                    st.session_state.reload_page = True  # Flag to reload
+        # Choose homework to edit
+        edit_choice = st.selectbox(
+            "Select homework to edit", 
+            options=[f"{i}: {hw['Subject']} - {hw['Description']}" for i, hw in enumerate(st.session_state.homework_list)],
+            key="edit_select"
+        )
 
-        # Trigger rerun safely after loop finishes
-        if st.session_state.reload_page:
-            st.session_state.reload_page = False
+        if st.button("Edit Selected Homework"):
+            st.session_state.edit_index = int(edit_choice.split(":")[0])
+            st.success("Now go to Add/Edit Homework page to update this entry.")
+
+        # Choose homework to delete
+        delete_choice = st.selectbox(
+            "Select homework to delete",
+            options=[f"{i}: {hw['Subject']} - {hw['Description']}" for i, hw in enumerate(st.session_state.homework_list)],
+            key="delete_select"
+        )
+
+        if st.button("Delete Selected Homework"):
+            index_to_delete = int(delete_choice.split(":")[0])
+            st.session_state.homework_list.pop(index_to_delete)
+            st.success("✅ Homework deleted successfully!")
             st.experimental_rerun()
     else:
-        st.info("No homework added yet. Go to 'Add Homework' to add new tasks.")
+        st.info("No homework added yet. Go to 'Add/Edit Homework' to add new tasks.")
 
 # ------------------------
 # STUDY TIMER PAGE
 # ------------------------
 elif page == "Study Timer":
     st.title("⏳ Study Timer")
-
     minutes = st.select_slider("Select Study Time (minutes)", options=[15, 30, 45, 60])
     start_button = st.button("Start Timer")
     timer_placeholder = st.empty()
