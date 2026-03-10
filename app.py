@@ -1,10 +1,19 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
+import time
 
 st.set_page_config(page_title="Student Homework Organizer", page_icon="📚")
 
+# ------------------------
+# Initialize session state
+# ------------------------
+if "homework_list" not in st.session_state:
+    st.session_state.homework_list = []
+
+# ------------------------
 # Sidebar Navigation
+# ------------------------
 page = st.sidebar.selectbox(
     "Navigation",
     ["Home", "Add Homework", "Homework List", "Study Timer", "Survey", "About"]
@@ -13,7 +22,9 @@ page = st.sidebar.selectbox(
 st.sidebar.title("📚 Homework Organizer")
 st.sidebar.write("Manage your homework and stay organized.")
 
+# ------------------------
 # HOME PAGE
+# ------------------------
 if page == "Home":
     st.title("📚 Student Homework Organizer")
 
@@ -28,135 +39,100 @@ if page == "Home":
     - Track assignment deadlines
     - Organize school subjects
     - Study timer for productivity
+    - Editable homework list
     """)
 
     st.success("Tip: Use the sidebar to navigate through the app!")
 
+# ------------------------
 # ADD HOMEWORK PAGE
+# ------------------------
 elif page == "Add Homework":
     st.title("➕ Add Homework")
 
     subject = st.text_input("Subject Name")
-
     assignment = st.text_area("Homework Description")
-
     due_date = st.date_input("Due Date", date.today())
-
     difficulty = st.slider("Difficulty Level", 1, 10)
-
-    priority = st.selectbox(
-        "Priority Level",
-        ["Low", "Medium", "High"]
-    )
-
+    priority = st.selectbox("Priority Level", ["Low", "Medium", "High"])
     reminder = st.checkbox("Set Study Reminder")
-
     study_hours = st.number_input("Estimated Study Hours", 1, 10)
 
     if st.button("Save Homework"):
-        st.success("Homework saved successfully!")
+        if subject.strip() == "" or assignment.strip() == "":
+            st.warning("Please enter both Subject and Homework Description.")
+        else:
+            new_homework = {
+                "Subject": subject,
+                "Description": assignment,
+                "Due Date": due_date,
+                "Difficulty": difficulty,
+                "Priority": priority,
+                "Study Hours": study_hours
+            }
+            st.session_state.homework_list.append(new_homework)
+            st.success("✅ Homework added successfully!")
 
-    st.progress(0.5)
-
+# ------------------------
 # HOMEWORK LIST PAGE
+# ------------------------
 elif page == "Homework List":
     st.title("📋 Homework List")
 
-    data = {
-        "Subject": ["Math", "Science", "English"],
-        "Homework": ["Algebra Worksheet", "Lab Report", "Essay Writing"],
-        "Priority": ["High", "Medium", "Low"]
-    }
+    if st.session_state.homework_list:
+        df = pd.DataFrame(st.session_state.homework_list)
+        edited_df = st.experimental_data_editor(df, num_rows="dynamic")  # Editable table
+        st.write("You can edit homework directly in the table above!")
+    else:
+        st.info("No homework added yet. Go to 'Add Homework' to add new tasks.")
 
-    df = pd.DataFrame(data)
-
-    st.dataframe(df)
-
-    option = st.radio(
-        "Filter Priority",
-        ["All", "High", "Medium", "Low"]
-    )
-
-    st.write("Selected Filter:", option)
-
+# ------------------------
 # STUDY TIMER PAGE
+# ------------------------
 elif page == "Study Timer":
-
     st.title("⏳ Study Timer")
 
-    minutes = st.select_slider(
-        "Select Study Time",
-        options=[15, 30, 45, 60]
-    )
+    minutes = st.select_slider("Select Study Time (minutes)", options=[15, 30, 45, 60])
+    start_button = st.button("Start Timer")
+    timer_placeholder = st.empty()
 
-    if st.button("Start Timer"):
-        st.info(f"Study session started for {minutes} minutes!")
+    if start_button:
+        total_seconds = minutes * 60
+        for i in range(total_seconds, -1, -1):
+            mins, secs = divmod(i, 60)
+            timer_placeholder.markdown(f"**Time Left: {mins:02d}:{secs:02d}**")
+            time.sleep(1)
+        st.success("⏰ Time's up! Great job studying!")
 
-    st.metric("Today's Study Goal", "2 Hours", "+30 mins")
-
+# ------------------------
 # SURVEY PAGE
+# ------------------------
 elif page == "Survey":
-
     st.title("📊 Student Study Survey")
 
     st.write("Help us understand your study habits.")
 
     name = st.text_input("Your Name")
-
-    grade = st.selectbox(
-        "Your Year Level",
-        ["1st Year", "2nd Year", "3rd Year", "4th Year"]
-    )
-
-    study_time = st.slider(
-        "How many hours do you study per day?",
-        0,10
-    )
-
-    focus = st.radio(
-        "When do you focus best?",
-        ["Morning","Afternoon","Evening"]
-    )
-
+    grade = st.selectbox("Your Year Level", ["1st Year", "2nd Year", "3rd Year", "4th Year"])
+    study_time = st.slider("How many hours do you study per day?", 0, 10)
+    focus = st.radio("When do you focus best?", ["Morning", "Afternoon", "Evening"])
     feedback = st.text_area("Any study tips you want to share?")
 
     if st.button("Submit Survey"):
         st.success("Thank you for your feedback!")
 
+# ------------------------
 # ABOUT PAGE
+# ------------------------
 elif page == "About":
-
     st.title("ℹ About This App")
 
-    st.subheader("App Purpose")
     st.write("""
-    The Student Homework Organizer is designed to help students manage their assignments
-    and stay organized with their academic responsibilities.
-    """)
-
-    st.subheader("Target Users")
-    st.write("""
-    The target users are students who want a simple system to track homework,
-    deadlines, and study schedules.
-    """)
-
-    st.subheader("Inputs Collected")
-    st.write("""
-    The application collects:
-    - Subject name
-    - Homework description
-    - Due date
-    - Difficulty level
-    - Priority level
-    - Estimated study hours
-    - Student survey responses
-    """)
-
-    st.subheader("Outputs")
-    st.write("""
-    The app displays:
-    - Homework list tables
-    - Study timer
-    - Success notifications
-    - Progress indicators
+    The Student Homework Organizer is a simple application developed using Streamlit that helps students manage 
+    their homework and academic responsibilities in an organized way. 
+    
+    The app is designed for students who want an easy tool to track their assignments, deadlines, and study tasks.
+    Users can input information such as the subject name, homework description, due date, priority level, difficulty level, and estimated study hours. 
+    The application then displays helpful outputs including organized homework lists, study timer notifications, 
+    tables, and status messages to guide students in managing their schoolwork efficiently.
     """)
